@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 double fun(double x);
 
@@ -21,12 +22,12 @@ int main(void) {
     double a, b;
 
     printf("Introduce el grado del polinomio interpolador:\n");
-    scanf("%d\n", &n);
+    scanf("%d", &n);
 
     printf("Introduce los extremos a i b del intervalo [a,b]:\n");
-    scanf("%lf %lf\n", &a, &b);
+    scanf("%lf %lf", &a, &b);
 
-    printf("Elige entre nodos equidistantes (0) o de Chebyshev (1):\n");
+    printf("Elige entre nodos equidistantes (1) o de Chebyshev (0):\n");
     scanf("%d", &eqOcheb);
 
     // Reservem espai a memòria
@@ -48,7 +49,53 @@ int main(void) {
         y_j[j] = fun(x);
     }
 
-    // Evaluem els polinomis
+    // Obrim l'arxiu de sortida
+    FILE *archivo_salida = fopen("resultados_lagrange.txt", "w");
+    if (archivo_salida == NULL) {
+        perror("Error al abrir el archivo de salida 'resultados_lagrange.txt'");
+        free(x_j);
+        free(y_j);
+        return -1;
+    }
 
+    // Hem d'evaluar en 1000 punts z_j a dins l'interval [a,b]
+    const int NUM_PUNTOS_EVAL = 1000;
+
+    // Per tant, calculem quina distància hi haurà entre cada punt consecutiu
+    double h_eval = (b - a) / (NUM_PUNTOS_EVAL - 1.0);
+
+    // Bucle d'evaluació
+    for (int j=0; j<NUM_PUNTOS_EVAL; j++) {
+        // Calculem el punt z_j
+        double z = a + j * h_eval;
+
+        // Obtenim els valors necessaris
+        double f_zj = fun(z); // Valor real de la funció
+        double Pn_zj;   // Valor del polinomi interpolador
+        int error_eval; // Booleà per saber si hem pogut calcular el polinomi o no
+
+        error_eval = lagrange_eval(z, n, x_j, y_j, &Pn_zj);
+
+        if (error_eval == -1) {
+            fprintf(stderr, "ERROR: La funcion lagrange_eval devolvio -1 en el punto z_j = %.10f. Proceso detenido.\n", z);
+            
+            // Alliberem la memoria
+            fclose(archivo_salida);
+            free(x_j);
+            free(y_j);
+            return -1;
+        }
+
+        double error_abs = fabs(f_zj - Pn_zj);
+
+        fprintf(archivo_salida, "%.15e\t%.15e\t%.15e\t%.15e\n", z, f_zj, Pn_zj, error_abs);
+
+        
+    }
+
+    printf("Evaluacion completada. Resultados guardados en 'resultados_lagrange.txt'.\n");
+    fclose(archivo_salida);
+    free(x_j);
+    free(y_j);
     return 0;
 }
