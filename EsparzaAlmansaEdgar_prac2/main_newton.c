@@ -65,7 +65,7 @@ int main(void) {
     double h_eval = (b - a) / (NUM_PUNTOS_EVAL - 1.0);
 
     // Booleà per saber si hem pogut calcular el polinomi o no
-    int error_eval; 
+    int error_eval;
     error_eval = difdiv(n, x_j, y_j);
 
     if (error_eval == -1) {
